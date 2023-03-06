@@ -1,0 +1,11 @@
+/Users/ittayweiss/Documents/Projects/zbref/target/debug/deps/assert_cmd-ed81c769d7fb6136.rmeta: /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/lib.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/assert.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/cargo.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/cmd.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/output.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/color.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/../README.md
+
+/Users/ittayweiss/Documents/Projects/zbref/target/debug/deps/assert_cmd-ed81c769d7fb6136.d: /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/lib.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/assert.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/cargo.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/cmd.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/output.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/color.rs /Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/../README.md
+
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/lib.rs:
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/assert.rs:
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/cargo.rs:
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/cmd.rs:
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/output.rs:
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/color.rs:
+/Users/ittayweiss/.cargo/registry/src/github.com-1ecc6299db9ec823/assert_cmd-2.0.8/src/../README.md:
