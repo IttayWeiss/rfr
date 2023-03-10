@@ -1,4 +1,4 @@
-# ZBRef 
+# rfr
 
 A CLI for zbMATH (https://zbmath.org) for fetching the bibtex data of a publication. 
 
