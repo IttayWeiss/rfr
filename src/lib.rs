@@ -1,7 +1,7 @@
 use clap::{Arg, ArgAction, Command};
 use std::error::Error;
-use std::fs;
 use std::io::Write;
+use std::{fs, io};
 //use std::fs::File;
 //use std::io::prelude::*;
 
@@ -165,8 +165,20 @@ fn display(articles: &Vec<Record>) -> usize {
 }
 
 fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
-    display(articles);
-    return Ok(1);
+    let num_articles = display(articles);
+    loop {
+        println!("Make a choice (1-{}): ", num_articles);
+        let mut choice = String::new();
+        io::stdin().read_line(&mut choice)?;
+        match choice.trim().parse::<usize>() {
+            Ok(n) if 1 <= n && n <= num_articles => {
+                break Ok(n - 1);
+            }
+            _ => {
+                println!("Invalid choice. Try again.");
+            }
+        }
+    }
 }
 
 fn extract_bibtex(article: &Record) -> String {

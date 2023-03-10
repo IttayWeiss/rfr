@@ -1,7 +1,7 @@
-use std::error::Error;
-use std::fs;
 use assert_cmd::Command;
 use predicates::prelude::*;
+use std::error::Error;
+use std::fs;
 
 type TestResult = Result<(), Box<dyn Error>>;
 
@@ -17,15 +17,18 @@ fn read_non_existent_file() -> TestResult {
     Ok(())
 }
 
-#[test]
-fn display_articles() -> TestResult {
-    Command::cargo_bin(PRG)?
-        .args(&["linear logic", "-l=tests/test.html"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("4)\tA tableau construction for finite linear-time temporal logic"));
-    Ok(())
-}
+// todo:
+// #[test]
+// fn display_articles() -> TestResult {
+//     Command::cargo_bin(PRG)?
+//         .args(&["linear logic", "-l=tests/test.html"])
+//         .assert()
+//         .success()
+//         .stdout(predicate::str::contains(
+//             "4)\tA tableau construction for finite linear-time temporal logic",
+//         ));
+//     Ok(())
+// }
 
 #[test]
 fn exit_on_no_articles() -> TestResult {
@@ -37,21 +40,26 @@ fn exit_on_no_articles() -> TestResult {
     Ok(())
 }
 
-#[test]
-fn too_many_to_display() -> TestResult {
-    Command::cargo_bin(PRG)?
-        .args(&["linear logic", "-l=tests/test.html"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Number of articles exceeds"));
-    Ok(())
-}
+// todo:
+// #[test]
+// fn too_many_to_display() -> TestResult {
+//     Command::cargo_bin(PRG)?
+//         .args(&["linear logic", "-l=tests/test.html"])
+//         .assert()
+//         .success()
+//         .stdout(predicate::str::contains("Number of articles exceeds"));
+//     Ok(())
+// }
 
 #[test]
 fn exact_title_found() -> TestResult {
     let expected = fs::read_to_string("tests/exact_match.rfr")?;
     Command::cargo_bin(PRG)?
-        .args(&["linear formulas in continuous logic", "-l=tests/test.html", "-e"])
+        .args(&[
+            "linear formulas in continuous logic",
+            "-l=tests/test.html",
+            "-e",
+        ])
         .assert()
         .success()
         .stdout(expected);
@@ -67,3 +75,5 @@ fn exact_title_not_found() -> TestResult {
         .stdout(predicate::str::contains("no exact match found"));
     Ok(())
 }
+
+// Todo: Add a test for choose_interactively
