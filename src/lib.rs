@@ -83,7 +83,7 @@ pub fn run(config: Config) -> MyResult<()> {
     //}
 
     let articles = scrape_zbmath(&response);
-    if articles.len() == 0 {
+    if articles.is_empty() {
         println!("No articles found.");
         return Ok(());
     }
@@ -146,9 +146,9 @@ fn extract_from_zbmath(article: scraper::ElementRef) -> Record {
 
     let res = Record {
         bib_url: format!("{}/{}", ZBMATH_URL, &bib_url),
-        title: title,
+        title,
     };
-    return res;
+    res
 }
 
 fn display(articles: &Vec<Record>) -> usize {
