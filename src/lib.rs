@@ -20,6 +20,7 @@ pub struct Config {
     search_phrase: String,
     read_from_file: bool, 
     input_file: Option<String>,
+    exact_title: bool,
 }
 
 pub fn get_args() -> MyResult<Config> {
@@ -32,6 +33,12 @@ pub fn get_args() -> MyResult<Config> {
             .help("input search phrase")
             .required(true)
             .num_args(1..)
+        )
+        .arg(Arg::new("exact_title")
+            .help("Match title exactly")
+            .short('e')
+            .long("exact")
+            .action(ArgAction::SetTrue)
         )
         .arg(Arg::new("from_file")
             .value_name("path")
@@ -53,6 +60,7 @@ pub fn get_args() -> MyResult<Config> {
             .to_lowercase(),
         read_from_file : matches.contains_id("from_file"),
         input_file : matches.get_one::<String>("from_file").map(|x| x.to_string()),
+        exact_title : matches.get_flag("exact_title"),
     })
 }
 
@@ -63,16 +71,32 @@ pub fn run(config: Config) -> MyResult<()> {
         response_from_zbmath(&config.search_phrase)?
     };
 
-    {
-        let mut file = fs::File::create("empty.html")?;
-        file.write_all(response.as_bytes())?;
-    }
+    //{
+    //    let mut file = fs::File::create("empty.html")?;
+    //    file.write_all(response.as_bytes())?;
+    //}
     
     let articles = scrape_zbmath(&response);
-    if display(&articles) == 0 {
+    if articles.len() == 0 {
         println!("No articles found.");
         return Ok(())
     }
+
+    let the_index = if config.exact_title {
+        if let Some(i) = articles.iter().position(|x| x.title.to_lowercase() == config.search_phrase) {
+            i
+        } else {
+            println!("no exact match found!");
+            return Ok(())
+        }
+            
+    } else {
+        choose_interactively(&articles)?
+    };
+
+    let the_article = &articles[the_index];
+    let bibtex = extract_bibtex(the_article);
+    println!("{}", &bibtex);
     
     Ok(())
 }
@@ -120,4 +144,14 @@ fn display(articles: &Vec<Record>) -> usize {
         println!("{})\t{}", i + 1, a.title);
     }
     articles.len().min(MAX_TO_DISPLAY)
+}
+
+fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
+    return Ok(1)
+}
+
+fn extract_bibtex(article: &Record) -> String {
+    let response = reqwest::blocking::get(&article.bib_url).unwrap().text().unwrap();
+
+    response
 }

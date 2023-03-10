@@ -1,20 +1,11 @@
 use std::error::Error;
+use std::fs;
 use assert_cmd::Command;
 use predicates::prelude::*;
 
 type TestResult = Result<(), Box<dyn Error>>;
 
 const PRG: &str = "rfr";
-
-//#[test]
-//fn echo_search_phrase() -> TestResult {
-//    Command::cargo_bin(PRG)?
-//        .args(&["one", "two", "three", "-l=tests/test.html"])
-//        .assert()
-//        .success()
-//        .stdout("one two three\n");
-//    Ok(())
-//}
 
 #[test]
 fn read_non_existent_file() -> TestResult {
@@ -53,5 +44,26 @@ fn too_many_to_display() -> TestResult {
         .assert()
         .success()
         .stdout(predicate::str::contains("Number of articles exceeds"));
+    Ok(())
+}
+
+#[test]
+fn exact_title_found() -> TestResult {
+    let expected = fs::read_to_string("tests/exact_match.rfr")?;
+    Command::cargo_bin(PRG)?
+        .args(&["linear formulas in continuous logic", "-l=tests/test.html", "-e"])
+        .assert()
+        .success()
+        .stdout(expected);
+    Ok(())
+}
+
+#[test]
+fn exact_title_not_found() -> TestResult {
+    Command::cargo_bin(PRG)?
+        .args(&["this title does not exist", "-l=tests/test.html", "-e"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("no exact match found"));
     Ok(())
 }
