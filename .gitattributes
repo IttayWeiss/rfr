@@ -1,3 +1,0 @@
-* linguist-vendored
-*.html linguist-vendored=false
-*.rs linguist-language=Rust

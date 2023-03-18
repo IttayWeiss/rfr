@@ -21,7 +21,7 @@ fn read_non_existent_file() -> TestResult {
 // #[test]
 // fn display_articles() -> TestResult {
 //     Command::cargo_bin(PRG)?
-//         .args(&["linear logic", "-l=tests/test.html"])
+//         .args(&["linear logic", "-l=tests/test.inhtml"])
 //         .assert()
 //         .success()
 //         .stdout(predicate::str::contains(
@@ -33,7 +33,7 @@ fn read_non_existent_file() -> TestResult {
 #[test]
 fn exit_on_no_articles() -> TestResult {
     Command::cargo_bin(PRG)?
-        .args(&["linear logic", "-l=tests/emptyzbmath.html"])
+        .args(&["linear logic", "-l=tests/emptyzbmath.inhtml"])
         .assert()
         .success()
         .stdout("No articles found.\n");
@@ -44,7 +44,7 @@ fn exit_on_no_articles() -> TestResult {
 // #[test]
 // fn too_many_to_display() -> TestResult {
 //     Command::cargo_bin(PRG)?
-//         .args(&["linear logic", "-l=tests/test.html"])
+//         .args(&["linear logic", "-l=tests/test.inhtml"])
 //         .assert()
 //         .success()
 //         .stdout(predicate::str::contains("Number of articles exceeds"));
@@ -57,7 +57,7 @@ fn exact_title_found() -> TestResult {
     Command::cargo_bin(PRG)?
         .args(&[
             "linear formulas in continuous logic",
-            "-l=tests/test.html",
+            "-l=tests/test.inhtml",
             "-e",
         ])
         .assert()
@@ -69,7 +69,7 @@ fn exact_title_found() -> TestResult {
 #[test]
 fn exact_title_not_found() -> TestResult {
     Command::cargo_bin(PRG)?
-        .args(&["this title does not exist", "-l=tests/test.html", "-e"])
+        .args(&["this title does not exist", "-l=tests/test.inhtml", "-e"])
         .assert()
         .success()
         .stdout(predicate::str::contains("no exact match found"));
