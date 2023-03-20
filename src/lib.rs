@@ -89,18 +89,16 @@ pub fn run(config: Config) -> MyResult<()> {
     }
 
     let the_index = if config.exact_title {
-        if let Some(i) = articles
+        *articles
             .iter()
             .position(|x| x.title.to_lowercase() == config.search_phrase)
-        {
-            i
-        } else {
-            println!("no exact match found!");
-            return Ok(());
-        }
+            .get_or_insert({
+                println!("No exact match found!");
+                choose_interactively(&articles)?
+            })
     } else {
         choose_interactively(&articles)?
-    };
+    } - 1;
 
     let the_article = &articles[the_index];
     let bibtex = extract_bibtex(the_article);
@@ -176,13 +174,16 @@ fn display(articles: &Vec<Record>) -> usize {
 fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
     // Display the articles and allows user to choose one.
     let num_articles = display(articles);
+    if num_articles == 1 {
+        return Ok(1);
+    }
     loop {
         println!("Make a choice (1-{}): ", num_articles);
         let mut choice = String::new();
         io::stdin().read_line(&mut choice)?;
         match choice.trim().parse::<usize>() {
             Ok(n) if 1 <= n && n <= num_articles => {
-                break Ok(n - 1);
+                break Ok(1);
             }
             _ => {
                 println!("Invalid choice. Try again.");
