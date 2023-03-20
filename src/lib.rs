@@ -53,7 +53,7 @@ pub fn get_args() -> MyResult<Config> {
                 .long("locally")
                 .action(ArgAction::Set)
                 .num_args(1)
-                .value_parser(value_parser!(PathBuf)), //.value_parser(clap::builder::NonEmptyStringValueParser::new()), // improve parser type
+                .value_parser(value_parser!(PathBuf)),
         )
         .get_matches();
 
@@ -73,15 +73,14 @@ pub fn get_args() -> MyResult<Config> {
 
 pub fn run(config: Config) -> MyResult<()> {
     let response = if config.read_from_file {
-        response_from_file(&config.input_file.unwrap())?
+        response_from_file(
+            &config
+                .input_file
+                .expect("input file must be valid since set to read from file"),
+        )?
     } else {
         response_from_zbmath(&config.search_phrase)?
     };
-
-    //{
-    //    let mut file = fs::File::create("empty.html")?;
-    //    file.write_all(response.as_bytes())?;
-    //}
 
     let articles = scrape_zbmath(&response);
     if articles.is_empty() {
@@ -111,17 +110,20 @@ pub fn run(config: Config) -> MyResult<()> {
 }
 
 fn response_from_zbmath(query: &str) -> MyResult<String> {
-    // ti%3A searches in title
+    // Performs a GET request from zbMATH.
+    // ti%3A indicates for zbMATH to perform a title search.
     let url = format!("{}{}{}", ZBMATH_URL, "/?q=ti%3A", query);
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
 }
 
 fn response_from_file(file_name: &PathBuf) -> MyResult<String> {
+    // Reads response from a locally saved file.
     Ok(fs::read_to_string(file_name)?)
 }
 
 fn scrape_zbmath(response: &str) -> Vec<Record> {
+    // Scrapes the zbMATH response into a vector of article records.
     let document = scraper::Html::parse_document(response);
     let articles_selector = scraper::Selector::parse(".content-result .list").unwrap();
     document
@@ -131,6 +133,7 @@ fn scrape_zbmath(response: &str) -> Vec<Record> {
 }
 
 fn extract_from_zbmath(article: scraper::ElementRef) -> Record {
+    // Converts a single zbMATH scraper element of an article into a record.
     let title_selector = scraper::Selector::parse(".title strong").unwrap();
     let bib_selector = scraper::Selector::parse(".bib").unwrap();
 
@@ -145,14 +148,14 @@ fn extract_from_zbmath(article: scraper::ElementRef) -> Record {
         .unwrap()
         .to_string();
 
-    let res = Record {
+    Record {
         bib_url: format!("{}/{}", ZBMATH_URL, &bib_url),
         title,
-    };
-    res
+    }
 }
 
 fn display(articles: &Vec<Record>) -> usize {
+    // Displays the articles and returns total number displayed.
     if articles.len() > MAX_TO_DISPLAY {
         println!("Displaying only the first {} articles.", MAX_TO_DISPLAY);
     }
@@ -163,6 +166,7 @@ fn display(articles: &Vec<Record>) -> usize {
 }
 
 fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
+    // Display the articles and allows user to choose one.
     let num_articles = display(articles);
     loop {
         println!("Make a choice (1-{}): ", num_articles);
@@ -180,6 +184,7 @@ fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
 }
 
 fn extract_bibtex(article: &Record) -> String {
+    // Performs a GET request from zbMATH to obtain bibtex data.
     let response = reqwest::blocking::get(&article.bib_url)
         .unwrap()
         .text()
