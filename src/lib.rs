@@ -1,33 +1,36 @@
-use clap::{Arg, ArgAction, Command};
+use clap::{value_parser, Arg, ArgAction, Command};
 use std::error::Error;
-use std::io::Write;
+use std::path::PathBuf;
 use std::{fs, io};
-//use std::fs::File;
-//use std::io::prelude::*;
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
 const ZBMATH_URL: &str = "https://zbmath.org";
+
+// Maximal number of articles to display for choosing interactively.
 const MAX_TO_DISPLAY: usize = 20;
 
+// A struct to hold the information about an article.
 struct Record {
-    bib_url: String,
+    // Presentation data:
     title: String,
+
+    // bib retreiving data:
+    bib_url: String,
 }
 
-#[derive(Debug)]
 pub struct Config {
     search_phrase: String,
     read_from_file: bool,
-    input_file: Option<String>,
+    input_file: Option<PathBuf>,
     exact_title: bool,
 }
 
 pub fn get_args() -> MyResult<Config> {
-    let matches = Command::new("zbref")
+    let matches = Command::new("rfr")
         .version("0.1.0")
         .author("Ittay Weiss <weittay@gmail.com")
-        .about("Bibtex reference snatcher for zbMATH")
+        .about("Bibtex reference snatcher")
         .arg(
             Arg::new("search_phrase")
                 .value_name("TEXT")
@@ -45,12 +48,12 @@ pub fn get_args() -> MyResult<Config> {
         .arg(
             Arg::new("from_file")
                 .value_name("path")
-                .help("load a local html file of zbMATH query results")
+                .help("Load a local html file of zbMATH query results")
                 .short('l')
                 .long("locally")
                 .action(ArgAction::Set)
                 .num_args(1)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new()), // improve parser type
+                .value_parser(value_parser!(PathBuf)), //.value_parser(clap::builder::NonEmptyStringValueParser::new()), // improve parser type
         )
         .get_matches();
 
@@ -63,9 +66,7 @@ pub fn get_args() -> MyResult<Config> {
             .join(" ")
             .to_lowercase(),
         read_from_file: matches.contains_id("from_file"),
-        input_file: matches
-            .get_one::<String>("from_file")
-            .map(|x| x.to_string()),
+        input_file: matches.get_one::<PathBuf>("from_file").map(|x| x.clone()),
         exact_title: matches.get_flag("exact_title"),
     })
 }
@@ -116,7 +117,7 @@ fn response_from_zbmath(query: &str) -> MyResult<String> {
     Ok(response)
 }
 
-fn response_from_file(file_name: &str) -> MyResult<String> {
+fn response_from_file(file_name: &PathBuf) -> MyResult<String> {
     Ok(fs::read_to_string(file_name)?)
 }
 
@@ -153,10 +154,7 @@ fn extract_from_zbmath(article: scraper::ElementRef) -> Record {
 
 fn display(articles: &Vec<Record>) -> usize {
     if articles.len() > MAX_TO_DISPLAY {
-        println!(
-            "Number of articles exceeds {}. Displaying the first {}.",
-            MAX_TO_DISPLAY, MAX_TO_DISPLAY
-        );
+        println!("Displaying only the first {} articles.", MAX_TO_DISPLAY);
     }
     for (i, a) in articles.iter().take(MAX_TO_DISPLAY).enumerate() {
         println!("{})\t{}", i + 1, a.title);
