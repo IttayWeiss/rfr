@@ -112,7 +112,7 @@ pub fn run(config: Config) -> MyResult<()> {
 fn response_from_zbmath(query: &str) -> MyResult<String> {
     // Performs a GET request from zbMATH.
     // ti%3A indicates for zbMATH to perform a title search.
-    let url = format!("{}{}{}", ZBMATH_URL, "/?q=ti%3A", query);
+    let url = format!("{}{}{}", ZBMATH_URL, "/?q=ti%3A", query.replace(" ", "+"));
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
 }
@@ -124,10 +124,18 @@ fn response_from_file(file_name: &PathBuf) -> MyResult<String> {
 
 fn scrape_zbmath(response: &str) -> Vec<Record> {
     // Scrapes the zbMATH response into a vector of article records.
+
     let document = scraper::Html::parse_document(response);
-    let articles_selector = scraper::Selector::parse(".content-result .list").unwrap();
+
+    // zbMATH's response structure is different for single article results and multiple article results.
+    let selector = if response.contains("listitem") {
+        scraper::Selector::parse(".content-result .list").unwrap() // multiple results
+    } else {
+        scraper::Selector::parse(".content-item .item").unwrap() // single result
+    };
+
     document
-        .select(&articles_selector)
+        .select(&selector)
         .map(extract_from_zbmath)
         .collect()
 }
