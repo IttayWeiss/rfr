@@ -21,9 +21,18 @@ struct Record {
 
 pub struct Config {
     search_phrase: String,
+
+    // Flags:
     read_from_file: bool,
-    input_file: Option<PathBuf>,
     exact_title: bool,
+    save_locally: bool,
+    search_loosely: bool,
+    init_seg: bool,
+    seg: bool,
+
+    // File paths
+    output_file: Option<PathBuf>,
+    input_file: Option<PathBuf>,
 }
 
 pub fn get_args() -> MyResult<Config> {
@@ -34,7 +43,7 @@ pub fn get_args() -> MyResult<Config> {
         .arg(
             Arg::new("search_phrase")
                 .value_name("TEXT")
-                .help("input search phrase")
+                .help("Input search phrase")
                 .required(true)
                 .num_args(1..),
         )
@@ -46,11 +55,42 @@ pub fn get_args() -> MyResult<Config> {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("loose_search")
+                .help("Perform the GET request on the search phrase loosely")
+                .short('y')
+                .long("loosely")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("init_seg")
+                .help("Match on an initial segment of the title")
+                .short('i')
+                .long("init-set")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("seg")
+                .help("Match on a segment of the title")
+                .short('s')
+                .long("seg")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("from_file")
                 .value_name("path")
                 .help("Load a local html file of zbMATH query results")
                 .short('l')
                 .long("locally")
+                .action(ArgAction::Set)
+                .num_args(1)
+                .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            Arg::new("save")
+                .value_name("path")
+                .help("Save GET response to a local file")
+                .short('w')
+                .long("save")
                 .action(ArgAction::Set)
                 .num_args(1)
                 .value_parser(value_parser!(PathBuf)),
@@ -65,9 +105,18 @@ pub fn get_args() -> MyResult<Config> {
             .collect::<Vec<String>>()
             .join(" ")
             .to_lowercase(),
+
+        // Flags:
         read_from_file: matches.contains_id("from_file"),
-        input_file: matches.get_one::<PathBuf>("from_file").map(|x| x.clone()),
         exact_title: matches.get_flag("exact_title"),
+        save_locally: matches.contains_id("save"),
+        search_loosely: matches.get_flag("loose_search"),
+        init_seg: matches.get_flag("init_seg"),
+        seg: matches.get_flag("seg"),
+
+        // Other text input
+        output_file: matches.get_one::<PathBuf>("save").map(|x| x.clone()),
+        input_file: matches.get_one::<PathBuf>("from_file").map(|x| x.clone()),
     })
 }
 
@@ -79,8 +128,19 @@ pub fn run(config: Config) -> MyResult<()> {
                 .expect("input file must be valid since set to read from file"),
         )?
     } else {
-        response_from_zbmath(&config.search_phrase)?
+        response_from_zbmath(&config.search_phrase, config.search_loosely)?
     };
+
+    if config.save_locally {
+        std::fs::write(
+            config
+                .output_file
+                .expect("output file must be specified since set to save locally"),
+            response,
+        )
+        .expect("Failed to write to file");
+        return Ok(());
+    }
 
     let articles = scrape_zbmath(&response);
     if articles.is_empty() {
@@ -89,16 +149,24 @@ pub fn run(config: Config) -> MyResult<()> {
     }
 
     let the_index = if config.exact_title {
-        *articles
+        if let Some(i) = articles
             .iter()
             .position(|x| x.title.to_lowercase() == config.search_phrase)
-            .get_or_insert({
-                println!("No exact match found!");
-                choose_interactively(&articles)?
-            })
+        {
+            i
+        } else {
+            println!("No exact match found!");
+            choose_interactively(&articles)?
+        }
+    } else if config.init_seg {
+        // TODO
+        choose_interactively(&articles)?
+    } else if config.seg {
+        // TODO
+        choose_interactively(&articles)?
     } else {
         choose_interactively(&articles)?
-    } - 1;
+    };
 
     let the_article = &articles[the_index];
     let bibtex = extract_bibtex(the_article);
@@ -107,10 +175,19 @@ pub fn run(config: Config) -> MyResult<()> {
     Ok(())
 }
 
-fn response_from_zbmath(query: &str) -> MyResult<String> {
+fn response_from_zbmath(query: &str, loose: bool) -> MyResult<String> {
     // Performs a GET request from zbMATH.
+    // The variable tight indicates whether wrap the query.
     // ti%3A indicates for zbMATH to perform a title search.
-    let url = format!("{}{}{}", ZBMATH_URL, "/?q=ti%3A", query.replace(" ", "+"));
+    let wrap = if loose { "" } else { "%22" };
+    let url = format!(
+        "{}{}{}{}{}",
+        ZBMATH_URL,
+        "/?q=ti%3A",
+        wrap,
+        query.replace(" ", "+"),
+        wrap
+    );
     let response = reqwest::blocking::get(url)?.text()?;
     Ok(response)
 }
@@ -162,8 +239,17 @@ fn extract_from_zbmath(article: scraper::ElementRef) -> Record {
 
 fn display(articles: &Vec<Record>) -> usize {
     // Displays the articles and returns total number displayed.
+    if articles.len() == 1 {
+        println!("Precisely one article found:");
+        println!("\t{}", articles[0].title);
+        return 1;
+    }
     if articles.len() > MAX_TO_DISPLAY {
-        println!("Displaying only the first {} articles.", MAX_TO_DISPLAY);
+        println!(
+            "Displaying only the first {} out of {} articles.",
+            MAX_TO_DISPLAY,
+            articles.len()
+        );
     }
     for (i, a) in articles.iter().take(MAX_TO_DISPLAY).enumerate() {
         println!("{})\t{}", i + 1, a.title);
@@ -172,10 +258,10 @@ fn display(articles: &Vec<Record>) -> usize {
 }
 
 fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
-    // Display the articles and allows user to choose one.
+    // Display the articles and allow user to choose one.
     let num_articles = display(articles);
     if num_articles == 1 {
-        return Ok(1);
+        return Ok(0);
     }
     loop {
         println!("Make a choice (1-{}): ", num_articles);
@@ -183,7 +269,7 @@ fn choose_interactively(articles: &Vec<Record>) -> MyResult<usize> {
         io::stdin().read_line(&mut choice)?;
         match choice.trim().parse::<usize>() {
             Ok(n) if 1 <= n && n <= num_articles => {
-                break Ok(1);
+                break Ok(n - 1);
             }
             _ => {
                 println!("Invalid choice. Try again.");
